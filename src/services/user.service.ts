@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CreateUserDto } from 'src/dtos/create-user.dto';
 import { User } from 'src/entities/user.entity';
 import { Repository } from 'typeorm';
 
@@ -18,10 +19,26 @@ export class UserService {
     return this.userRepository.findOneBy({ userId });
   }
 
+  // Méthode pour créer un utilisateur
+
+    /*
   create(user: Partial<User>): Promise<User> {
     const newUser = this.userRepository.create(user);
     return this.userRepository.save(newUser);
   }
+  */
+  async createUser(createUserDto: CreateUserDto): Promise<User> {
+    try {
+      // Créer une nouvelle instance de User avec les données du DTO
+      const newUser = this.userRepository.create(createUserDto);
+
+      // Sauvegarder dans la base de données
+      return await this.userRepository.save(newUser);
+    } catch (error) {
+      throw new Error(`Failed to create user: ${error.message}`);
+    }
+  }
+
 
   async update(userId: number, user: Partial<User>): Promise<User> {
     await this.userRepository.update(userId, user);

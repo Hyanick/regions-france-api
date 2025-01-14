@@ -10,21 +10,21 @@ export class User {
   })
   userId: number;
 
-  @Column()
+  @Column({ nullable: true })
   @ApiProperty({
     description: 'First name of the user',
     example: 'John',
   })
   firstName: string;
 
-  @Column()
+  @Column({ nullable: true })
   @ApiProperty({
     description: 'Last name of the user',
     example: 'Doe',
   })
   lastName: string;
 
-  @Column({ type: 'enum', enum: ['male', 'female', 'other'] })
+  @Column({ type: 'enum', enum: ['male', 'female', 'other'],  nullable: true })
   @ApiProperty({
     description: 'Gender of the user',
     example: 'male',
@@ -32,7 +32,7 @@ export class User {
   })
   gender: 'male' | 'female' | 'other';
 
-  @Column({ type: 'date' })
+  @Column({ type: 'date', nullable: true })
   @ApiProperty({
     description: 'Date of birth of the user',
     example: '1990-01-01',
@@ -47,7 +47,7 @@ export class User {
   })
   placeOfBirth: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true }) 
   @ApiProperty({
     description: 'Region of residence of the user',
     example: 'Île-de-France',
@@ -95,13 +95,13 @@ export class User {
   })
   country: string;
 
-  @Column({ default: true })
+  @Column({ default: 'true' })
   @ApiProperty({
     description: 'Whether the user is active',
     example: true,
     default: true,
   })
-  isActive: boolean;
+  isActive: string;
 
 
   @Column({ nullable: true })

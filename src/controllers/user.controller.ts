@@ -30,6 +30,7 @@ import { UserService } from '../services/user.service';
 
 import * as path from 'path';
 import * as fs from 'fs';
+import { CreateUserDto } from 'src/dtos/create-user.dto';
 
 @ApiTags('Users') // Regroupe les routes du contrôleur sous "Users" dans Swagger
 @Controller('api/users')
@@ -86,8 +87,39 @@ export class UserController {
     status: 400,
     description: 'Invalid input',
   })
-  async createUser(@Body() user: User): Promise<User> {
-    return this.userService.create(user);
+  @UseInterceptors(
+    FileInterceptor('profilePicture', {
+      storage: diskStorage({
+        // Définir le répertoire absolu sur votre disque local
+        destination: (req, file, callback) => {
+          const uploadDir = path.join('C:', 'mon_dossier', 'uploads'); // Utilisation correcte du chemin absolu
+
+          // Créer le répertoire si nécessaire
+          if (!require('fs').existsSync(uploadDir)) {
+            require('fs').mkdirSync(uploadDir, { recursive: true });
+          }
+
+          callback(null, uploadDir); // Utiliser le répertoire local
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        },
+      }),
+    }),
+  )
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<User> {
+    console.log('createUserDto:', createUserDto); // Débogage : Vérifiez les champs
+    console.log('Uploaded File:', file); // Débogage : Vérifiez le fichier
+    if (file) {
+        createUserDto.profilePicture = file.path;
+    }
+    return this.userService.createUser(createUserDto);
   }
 
   @Put(':id')
@@ -191,7 +223,7 @@ export class UserController {
 
     return { message: 'Profile picture uploaded successfully', path: filePath };
   }
-
+  /*
   @Get('profile-picture/:fileName')
   @ApiOperation({ summary: 'Retrieve a user’s profile picture' })
   @ApiParam({
@@ -209,8 +241,8 @@ export class UserController {
     res.setHeader('Content-Type', 'image/jpeg');
     res.send(file);
   }
-
-  @Get(':userId/profile-picture')
+*/
+  @Get('/profile-picture/:userId')
   @ApiOperation({ summary: 'Retrieve a user’s profile picture by user ID' })
   @ApiParam({
     name: 'userId',
@@ -221,7 +253,6 @@ export class UserController {
     // Récupère le chemin de la photo depuis le service utilisateur
     const filePath = await this.userService.getProfilePicturePath(userId);
     console.log('filePath---> controller', filePath);
-    
 
     // Vérifie si le fichier existe
     if (!fs.existsSync(filePath)) {
@@ -239,9 +270,6 @@ export class UserController {
 
     res.setHeader('Content-Type', mimeType);
     res.sendFile(filePath); // Envoie le fichier au client
-
-
-    
   }
 }
 
