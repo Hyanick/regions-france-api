@@ -1,19 +1,25 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { UploadFileDto } from './dtos/upload-file.dto';
 import { Commune } from './entities/commune.entity';
 import { Departement } from './entities/departement.entity';
 import { Region } from './entities/region.entity';
 import { User } from './entities/user.entity';
+import { AuthModule } from './modules/auth.module';
 import { CommuneModule } from './modules/commune.module';
 import { DepartementModule } from './modules/departement.module';
 import { RegionModule } from './modules/region.module';
 import { UserModule } from './modules/user.module';
-import { UploadFileDto } from './dtos/upload-file.dto';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // Rend ConfigModule disponible globalement
+      envFilePath: '.env', // Chemin vers votre fichier .env
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost', // ou l'adresse de votre serveur DB
@@ -22,13 +28,15 @@ import { UploadFileDto } from './dtos/upload-file.dto';
       password: 'postgres',
       database: 'regionsFrance',
       entities: [Region, Departement, Commune, User],
-      synchronize: true,
+      synchronize: true, // À désactiver en production
     }),
     DepartementModule,
     CommuneModule,
     RegionModule,
     UserModule,
-    UploadFileDto
+    UploadFileDto,
+    AuthModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

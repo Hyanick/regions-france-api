@@ -28,9 +28,10 @@ import { User } from 'src/entities/user.entity';
 import { FileService } from 'src/services/file.service';
 import { UserService } from '../services/user.service';
 
-import * as path from 'path';
 import * as fs from 'fs';
-import { CreateUserDto } from 'src/dtos/create-user.dto';
+import * as path from 'path';
+import { RegisterUserDto } from 'src/dtos/register-user.dto';
+import { UpdateUserDto } from 'src/dtos/update-user.dto';
 
 @ApiTags('Users') // Regroupe les routes du contrôleur sous "Users" dans Swagger
 @Controller('api/users')
@@ -72,6 +73,10 @@ export class UserController {
     return this.userService.findById(id);
   }
 
+
+
+
+/*
   @Post()
   @ApiOperation({ summary: 'Create a new user' })
   @ApiBody({
@@ -116,11 +121,14 @@ export class UserController {
   ): Promise<User> {
     console.log('createUserDto:', createUserDto); // Débogage : Vérifiez les champs
     console.log('Uploaded File:', file); // Débogage : Vérifiez le fichier
-    if (file) {
+   if (file) {
         createUserDto.profilePicture = file.path;
     }
     return this.userService.createUser(createUserDto);
   }
+
+
+  */
 
   @Put(':id')
   @ApiOperation({ summary: 'Update an existing user by ID' })
@@ -131,18 +139,18 @@ export class UserController {
   })
   @ApiBody({
     description: 'Updated data for the user',
-    type: User,
+    type: UpdateUserDto,
   })
   @ApiResponse({
     status: 200,
     description: 'User successfully updated',
-    type: User,
+    type: UpdateUserDto,
   })
   @ApiResponse({
     status: 404,
     description: 'User not found',
   })
-  async updateUser(@Param('id') id: number, @Body() user: User): Promise<User> {
+  async updateUser(@Param('id') id: number, @Body() user: User): Promise< Partial<User>  > {
     return this.userService.update(id, user);
   }
 

@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty } from 'class-validator';
 
 @Entity()
 export class User {
@@ -37,7 +38,7 @@ export class User {
     description: 'Date of birth of the user',
     example: '1990-01-01',
   })
-  dateOfBirth: Date;
+  dateOfBirth: string;
 
   @Column({ nullable: true })
   @ApiProperty({
@@ -101,10 +102,18 @@ export class User {
     example: true,
     default: true,
   })
-  isActive: string;
+  isActive: boolean;
 
 
   @Column({ nullable: true })
   @ApiProperty({ description: 'Profile picture path', example: 'uploads/profile-1.jpg' })
   profilePicture: string;
+
+  @ApiProperty({ description: 'email', example: 'test@domain.fr' })
+  @Column({ nullable: false })
+  email: string;
+
+  @ApiProperty({ description: 'password', example: '******' })
+  @Column({ nullable: false })
+  password: string
 }
