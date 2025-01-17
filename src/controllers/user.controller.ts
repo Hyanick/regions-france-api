@@ -6,6 +6,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Put,
   Res,
@@ -16,10 +17,12 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiConsumes,
+  ApiExtraModels,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -32,6 +35,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { RegisterUserDto } from 'src/dtos/register-user.dto';
 import { UpdateUserDto } from 'src/dtos/update-user.dto';
+import { UnionDto } from 'src/dtos/update-user.dto';
 
 @ApiTags('Users') // Regroupe les routes du contrôleur sous "Users" dans Swagger
 @Controller('api/users')
@@ -73,10 +77,7 @@ export class UserController {
     return this.userService.findById(id);
   }
 
-
-
-
-/*
+  /*
   @Post()
   @ApiOperation({ summary: 'Create a new user' })
   @ApiBody({
@@ -130,7 +131,8 @@ export class UserController {
 
   */
 
-  @Put(':id')
+  @Patch('update-profile/:id')
+  @ApiExtraModels(UploadFileDto, UpdateUserDto)
   @ApiOperation({ summary: 'Update an existing user by ID' })
   @ApiParam({
     name: 'id',
@@ -139,7 +141,12 @@ export class UserController {
   })
   @ApiBody({
     description: 'Updated data for the user',
-    type: UpdateUserDto,
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(UploadFileDto) },
+        { $ref: getSchemaPath(UpdateUserDto) },
+      ],
+    },
   })
   @ApiResponse({
     status: 200,
@@ -150,8 +157,39 @@ export class UserController {
     status: 404,
     description: 'User not found',
   })
-  async updateUser(@Param('id') id: number, @Body() user: User): Promise< Partial<User>  > {
-    return this.userService.update(id, user);
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('profilePicture', {
+      storage: diskStorage({
+        // Définir le répertoire absolu sur votre disque local
+        destination: (req, file, callback) => {
+          const uploadDir = path.join('C:', 'mon_dossier', 'uploads'); // Utilisation correcte du chemin absolu
+
+          // Créer le répertoire si nécessaire
+          if (!require('fs').existsSync(uploadDir)) {
+            require('fs').mkdirSync(uploadDir, { recursive: true });
+          }
+
+          callback(null, uploadDir); // Utiliser le répertoire local
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        },
+      }),
+    }),
+  )
+  async updateUser(
+    @Param('id') id: number,
+    @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<User> {
+    if (file) {
+      updateUserDto.profilePicture = file.path;
+    }
+    return this.userService.updateUser(id, updateUserDto);
   }
 
   @Delete(':id')

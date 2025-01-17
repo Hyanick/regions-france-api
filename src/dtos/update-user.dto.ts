@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -127,4 +127,23 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   isActive?: string;
+
+
+  @ApiProperty({ description: 'Profile picture path', example: 'uploads/profile-1.jpg' })
+  profilePicture?: string;
+}
+
+class UploadFileDto {
+  @ApiProperty({ type: 'string', format: 'binary' })
+  file: any;
+}
+
+export class UnionDto {
+  @ApiProperty({
+    oneOf: [
+      { $ref: getSchemaPath(UploadFileDto) },
+      { $ref: getSchemaPath(UpdateUserDto) },
+    ],
+  })
+  data: UploadFileDto | UpdateUserDto;
 }

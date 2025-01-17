@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UpdateUserDto } from 'src/dtos/update-user.dto';
 import { User } from 'src/entities/user.entity';
 import { Repository } from 'typeorm';
 
@@ -19,7 +20,7 @@ export class UserService {
   }
 
   findById(userId: number): Promise<User | null> {
-    return this.userRepository.findOneBy({ userId });
+    return this.userRepository.findOne({ where: { userId } });
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -46,7 +47,7 @@ export class UserService {
     // Sauvegarder l'utilisateur dans la base de données
     const savedUser = await this.userRepository.save(newUser);
 
-    // Retourner uniquement l'email et le mot de passe
+    // Retourner uniquement le firstname, le lastName, l'email et le mot de passe
     return {
       firstName: savedUser.firstName,
       lastName: savedUser.lastName,
@@ -55,7 +56,7 @@ export class UserService {
     };
   }
 
- /* async createUser(createUserDto: CreateUserDto): Promise<User> {
+  /* async createUser(createUserDto: CreateUserDto): Promise<User> {
     try {
       // Créer une nouvelle instance de User avec les données du DTO
       //const newUser = this.userRepository.create(createUserDto);
@@ -68,9 +69,17 @@ export class UserService {
       throw new Error(`Failed to create user: ${error.message}`);
     }
   }*/
-  async update(userId: number, user: Partial<User>): Promise<Partial<User>> {
-    await this.userRepository.update(userId, user);
-    return this.findById(userId);
+  async updateUser(
+    userId: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { userId } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    Object.assign(user, updateUserDto);
+
+    return this.userRepository.save(user);
   }
 
   async remove(userId: number): Promise<void> {

@@ -39,7 +39,7 @@ async login(email: string, password: string): Promise<{ accessToken: string }> {
     throw new UnauthorizedException('Invalid credentials');
   }
 
-  const payload = { sub: user.userId, email: user.email };
+  const payload = { userId: user.userId, email: user.email };
   const accessToken = this.jwtService.sign(payload);
   return { accessToken };
 }
