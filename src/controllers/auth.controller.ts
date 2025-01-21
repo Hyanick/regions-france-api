@@ -12,6 +12,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { log } from 'console';
 import { LoginDto } from 'src/dtos/login.dto';
+import { RefreshTokenDto } from 'src/dtos/refresh-token.dto';
 import { RegisterUserDto } from 'src/dtos/register-user.dto';
 import { AuthService } from 'src/services/auth.service';
 import { UserService } from 'src/services/user.service';
@@ -77,5 +78,11 @@ export class AuthController {
     log('req.user selected', req.user)
     log('userId selected', userId)
     return this.userService.findById(userId); // Récupérer les informations utilisateur
+  }
+
+  @Post('refresh-token')
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+    const { refreshToken } = refreshTokenDto;
+    return this.authService.refresh(refreshToken);
   }
 }

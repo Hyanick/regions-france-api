@@ -105,4 +105,14 @@ export class UserService {
 
     return user.profilePicture; // Retourne le chemin de l'image stocké dans la base de données
   }
+
+  async updateUserRefreshToken(userId: number, refreshToken: string) {
+    const user = await this.userRepository.findOneBy({ userId });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    user.refreshToken = refreshToken;
+    await this.userRepository.save(user);
+  }
+  
 }

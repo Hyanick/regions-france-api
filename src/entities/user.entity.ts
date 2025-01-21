@@ -116,4 +116,7 @@ export class User {
   @ApiProperty({ description: 'password', example: '******' })
   @Column({ nullable: false })
   password: string
+
+  @Column({ nullable: true }) // Peut être null si le token n'est pas généré
+  refreshToken: string;
 }

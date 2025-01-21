@@ -11,6 +11,7 @@ import {
   Put,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -36,6 +37,7 @@ import * as path from 'path';
 import { RegisterUserDto } from 'src/dtos/register-user.dto';
 import { UpdateUserDto } from 'src/dtos/update-user.dto';
 import { UnionDto } from 'src/dtos/update-user.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Users') // Regroupe les routes du contrôleur sous "Users" dans Swagger
 @Controller('api/users')
@@ -47,6 +49,7 @@ export class UserController {
   ) {}
 
   @Get()
+  @UseGuards(AuthGuard('jwt')) // Protéger la route avec le guard JWT
   @ApiOperation({ summary: 'Retrieve all users' })
   @ApiResponse({
     status: 200,
