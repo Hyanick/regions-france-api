@@ -28,4 +28,11 @@ export class RegisterUserDto {
   })
   @IsString()
   password: string;
+
+  @ApiProperty({
+    description: 'The phone number of the user',
+    example: '06 74 52 71',
+  })
+  @IsString()
+  phoneNumber: string;
 }

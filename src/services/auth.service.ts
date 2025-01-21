@@ -1,10 +1,19 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import { User } from '../entities/user.entity';
 import { UserService } from './user.service';
 import { ConfigService } from '@nestjs/config';
+import { RegisterUserDto } from 'src/dtos/register-user.dto';
+import { UpdateUserDto } from 'src/dtos/update-user.dto';
+import { PartialType } from '@nestjs/swagger';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +21,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly mailerService: MailerService,
   ) {}
   /*
   async validateUser(email: string, password: string): Promise<User | null> {
@@ -42,6 +52,11 @@ export class AuthService {
     const user = await this.validateUser(email, password);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const userIsActive = (await this.userService.findByEmail(email)).isActive;
+    if (!userIsActive) {
+      throw new UnauthorizedException('Veuillez activer compte');
     }
 
     const payload = { userId: user.userId, email: user.email };
@@ -107,6 +122,36 @@ export class AuthService {
     }
   }
 
+  async resendVerificationCode(userId: number): Promise<void> {
+    const user = await this.userService.findById(userId);
+
+    if (!user) {
+      throw new BadRequestException('Utilisateur introuvable');
+    }
+
+    if (user.isVerified) {
+      throw new BadRequestException("L'utilisateur est déjà vérifié");
+    }
+
+    // Génération d'un nouveau code
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
+
+    // Mise à jour du code dans la base de données
+    await this.userService.updateUser(user.userId, { verificationCode });
+
+    // Envoi du code par email
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Vérification de votre compte',
+      template: 'verification', // Nom du fichier template sans extension
+      context: {
+        code: verificationCode, // Remplissage des variables {{ code }} dans le template
+      },
+    });
+  }
+
   /*
   async login(loginUser: LoginDto) {
     const payload = {  email: loginUser.email };
@@ -128,8 +173,36 @@ export class AuthService {
   }
 */
 
-  async register(user: Partial<User>): Promise<Partial<User>> {
-    user.password = await bcrypt.hash(user.password, 10); // Hash le mot de passe
-    return await this.userService.create(user);
+  async register(
+    registerUserDto: Partial<RegisterUserDto>,
+  ): Promise<Partial<User>> {
+    // user.password = await bcrypt.hash(user.password, 10); // Hash le mot de passe
+    return await this.userService.registerUser(registerUserDto);
+  }
+
+  async verifyCode(userId: number, code: string): Promise<User> {
+    const user = await this.userService.findById(userId);
+
+    // Rechercher l'utilisateur
+
+    console.log('userId ', userId);
+    console.log('user ', user);
+    console.log('user.verificationCode ', user.verificationCode);
+    console.log('code ', code);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+    if (user.verificationCode !== code) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    user.isVerified = true;
+    user.verificationCode = null; // Nettoyer le code après vérification
+    // return await this.updateUser(userId, { isVerified: true, verificationCode: null });
+    return await this.userService.updateUser(userId, {
+      isActive: true,
+      isVerified: true,
+    });
   }
 }

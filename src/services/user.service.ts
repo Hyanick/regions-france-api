@@ -7,12 +7,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateUserDto } from 'src/dtos/update-user.dto';
 import { User } from 'src/entities/user.entity';
 import { Repository } from 'typeorm';
+import { VerificationService } from './verification.service';
+import { RegisterUserDto } from 'src/dtos/register-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private verificationService: VerificationService, // Service pour gérer le code de vérification
   ) {}
 
   findAll(): Promise<User[]> {
@@ -29,8 +33,8 @@ export class UserService {
 
   // Méthode pour créer un utilisateur
 
-  async create(user: Partial<User>): Promise<Partial<User>> {
-    const { firstName, lastName, email, password } = user;
+  async registerUser(registerUserDto: Partial<RegisterUserDto>): Promise<Partial<User>> {
+    const {firstName, lastName, email, password } = registerUserDto;
 
     // Vérifier si un utilisateur avec cet email existe déjà
     const existingUser = await this.findByEmail(email);
@@ -38,14 +42,39 @@ export class UserService {
       throw new ConflictException('Email already in use');
     }
 
+    // Hacher le mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    //Récupère le code
+    const verificationCode =
+    await this.verificationService.generateVerificationCode(); // Générer un code
+
     const newUser = this.userRepository.create({
       firstName,
       lastName,
       email,
-      password,
+      password: hashedPassword,
+      isActive: false, // L'utilisateur est inactif tant que l'e-mail n'est pas vérifié
+      verificationCode,
+      
     });
     // Sauvegarder l'utilisateur dans la base de données
     const savedUser = await this.userRepository.save(newUser);
+
+
+
+    // Envoyer un email ou SMS
+    if (registerUserDto.phoneNumber) {
+      await this.verificationService.sendSms(
+        registerUserDto.phoneNumber,
+        verificationCode,
+      );
+    } else {
+      await this.verificationService.sendEmail(
+        registerUserDto.email,
+        verificationCode,
+      );
+    }
 
     // Retourner uniquement le firstname, le lastName, l'email et le mot de passe
     return {
@@ -53,6 +82,7 @@ export class UserService {
       lastName: savedUser.lastName,
       email: savedUser.email,
       password: savedUser.password,
+      userId: savedUser.userId
     };
   }
 
@@ -71,7 +101,7 @@ export class UserService {
   }*/
   async updateUser(
     userId: number,
-    updateUserDto: UpdateUserDto,
+    updateUserDto: Partial<UpdateUserDto>,
   ): Promise<User> {
     const user = await this.userRepository.findOne({ where: { userId } });
     if (!user) {
@@ -114,5 +144,4 @@ export class UserService {
     user.refreshToken = refreshToken;
     await this.userRepository.save(user);
   }
-  
 }

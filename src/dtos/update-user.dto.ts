@@ -126,7 +126,15 @@ export class UpdateUserDto {
   })
   @IsOptional()
   @IsString()
-  isActive?: string;
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  isVerified?: boolean;
+
+  @IsOptional()
+  @IsString()
+  verificationCode: string;
 
 
   @ApiProperty({ description: 'Profile picture path', example: 'uploads/profile-1.jpg' })

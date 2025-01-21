@@ -14,6 +14,7 @@ import { log } from 'console';
 import { LoginDto } from 'src/dtos/login.dto';
 import { RefreshTokenDto } from 'src/dtos/refresh-token.dto';
 import { RegisterUserDto } from 'src/dtos/register-user.dto';
+import { User } from 'src/entities/user.entity';
 import { AuthService } from 'src/services/auth.service';
 import { UserService } from 'src/services/user.service';
 
@@ -60,8 +61,7 @@ export class AuthController {
   async register(
     @Body()
     body: {
-      firstName;
-      string;
+      firstName: string;
       lastName: string;
       email: string;
       password: string;
@@ -85,4 +85,22 @@ export class AuthController {
     const { refreshToken } = refreshTokenDto;
     return this.authService.refresh(refreshToken);
   }
+
+  @Post('verify')
+  async verifyCode(@Body() { userId, code }: { userId: number; code: string }): Promise<User> {
+    return this.authService.verifyCode(userId, code);
+  }
+
+  @Post('resend-code')
+  //@UseGuards(JwtAuthGuard) // Optionnel si le renvoi de code nécessite d'être connecté
+  async resendCode(@Body() {userId}: { userId: number}) {
+    //const user = req.user; // Obtenir l'utilisateur connecté à partir du token
+    return this.authService.resendVerificationCode(userId);
+  }
+ /* @Post('resend-code')
+  @UseGuards(JwtAuthGuard) // Optionnel si le renvoi de code nécessite d'être connecté
+  async resendCode(@Req() req: any) {
+    const user = req.user; // Obtenir l'utilisateur connecté à partir du token
+    return this.authService.resendVerificationCode(user.email);
+  }*/
 }

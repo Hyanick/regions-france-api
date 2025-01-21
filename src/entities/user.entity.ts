@@ -25,7 +25,7 @@ export class User {
   })
   lastName: string;
 
-  @Column({ type: 'enum', enum: ['male', 'female', 'other'],  nullable: true })
+  @Column({ type: 'enum', enum: ['male', 'female', 'other'], nullable: true })
   @ApiProperty({
     description: 'Gender of the user',
     example: 'male',
@@ -48,7 +48,7 @@ export class User {
   })
   placeOfBirth: string;
 
-  @Column({ nullable: true }) 
+  @Column({ nullable: true })
   @ApiProperty({
     description: 'Region of residence of the user',
     example: 'Île-de-France',
@@ -82,7 +82,7 @@ export class User {
 
   @Column({ nullable: true })
   @ApiProperty({
-    description: 'Postal code of the user\'s address',
+    description: "Postal code of the user's address",
     example: '75001',
     nullable: true,
   })
@@ -104,9 +104,11 @@ export class User {
   })
   isActive: boolean;
 
-
   @Column({ nullable: true })
-  @ApiProperty({ description: 'Profile picture path', example: 'uploads/profile-1.jpg' })
+  @ApiProperty({
+    description: 'Profile picture path',
+    example: 'uploads/profile-1.jpg',
+  })
   profilePicture: string;
 
   @ApiProperty({ description: 'email', example: 'test@domain.fr' })
@@ -115,8 +117,17 @@ export class User {
 
   @ApiProperty({ description: 'password', example: '******' })
   @Column({ nullable: false })
-  password: string
+  password: string;
 
   @Column({ nullable: true }) // Peut être null si le token n'est pas généré
   refreshToken: string;
+
+  @Column({ nullable: true })
+  verificationCode: string;
+
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @Column({ default: false })
+  phoneNumber: string;
 }

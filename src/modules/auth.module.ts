@@ -6,6 +6,7 @@ import { JwtStrategy } from 'src/config/jwt.strategy';
 import { AuthController } from 'src/controllers/auth.controller';
 import { AuthService } from 'src/services/auth.service';
 import { UserModule } from './user.module';
+import { VerificationModule } from './verification.module';
 
 
 @Module({
@@ -20,6 +21,7 @@ import { UserModule } from './user.module';
       }),
     }),
     UserModule,
+    VerificationModule,
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
