@@ -1,13 +1,16 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { log } from 'console';
@@ -23,6 +26,8 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+    
   ) {}
 
   @Post('login')
@@ -74,9 +79,9 @@ export class AuthController {
   @Get('profile')
   async getProfile(@Req() req: any) {
     const userId = req.user.userId; // Récupérer l'ID utilisateur depuis le token
-    log('req selected', req)
-    log('req.user selected', req.user)
-    log('userId selected', userId)
+    log('req selected', req);
+    log('req.user selected', req.user);
+    log('userId selected', userId);
     return this.userService.findById(userId); // Récupérer les informations utilisateur
   }
 
@@ -87,17 +92,45 @@ export class AuthController {
   }
 
   @Post('verify')
-  async verifyCode(@Body() { userId, code }: { userId: number; code: string }): Promise<User> {
+  async verifyCode(
+    @Body() { userId, code }: { userId: number; code: string },
+  ): Promise<User> {
     return this.authService.verifyCode(userId, code);
   }
 
   @Post('resend-code')
   //@UseGuards(JwtAuthGuard) // Optionnel si le renvoi de code nécessite d'être connecté
-  async resendCode(@Body() {userId}: { userId: number}) {
+  async resendCode(@Body() { userId }: { userId: number }) {
     //const user = req.user; // Obtenir l'utilisateur connecté à partir du token
     return this.authService.resendVerificationCode(userId);
   }
- /* @Post('resend-code')
+
+  @Get('verify-account')
+  async verifyAccount(@Query('token') token: string): Promise<{message: string}> {
+    console.log('Received Token:', token);
+    try {
+      // Vérifier et décoder le token
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_VERIFICATION_SECRET,
+      });
+
+      console.log('Decoded Payload:', payload);
+
+      // Activer le compte utilisateur
+      const user = await this.userService.updateUser(payload.userId, {
+        isActive: true,
+      });
+
+      if (!user) {
+        throw new BadRequestException('Utilisateur introuvable');
+      }
+
+      return  {message: 'Compte vérifié avec succès !'} ;
+    } catch (error) {
+      throw new BadRequestException('Token de vérification invalide ou expiré');
+    }
+  }
+  /* @Post('resend-code')
   @UseGuards(JwtAuthGuard) // Optionnel si le renvoi de code nécessite d'être connecté
   async resendCode(@Req() req: any) {
     const user = req.user; // Obtenir l'utilisateur connecté à partir du token

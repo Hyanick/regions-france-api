@@ -130,4 +130,7 @@ export class User {
 
   @Column({ default: false })
   phoneNumber: string;
+
+  @Column({ nullable: true })
+  token: string;
 }

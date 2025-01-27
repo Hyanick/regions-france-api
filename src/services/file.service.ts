@@ -22,7 +22,7 @@ private readonly uploads = 'C:\\Devs\\RegionsFrance\\Photos_Profils'
 
   async saveFile(file: Express.Multer.File): Promise<string> {
     const filePath = join(this.uploadDir, file.filename);
-    console.log('filePath service 1', filePath);
+   // console.log('filePath service 1', filePath);
     
     await fs.writeFile(filePath, file.buffer);
     return ` ${this.uploads}/${file.filename}`;
@@ -30,7 +30,7 @@ private readonly uploads = 'C:\\Devs\\RegionsFrance\\Photos_Profils'
 
   async getFile(path: string): Promise<Buffer> {
     const filePath = path;
-    console.log(' filePath Service', filePath);
+   // console.log(' filePath Service', filePath);
     
     return fs.readFile(filePath);
   }

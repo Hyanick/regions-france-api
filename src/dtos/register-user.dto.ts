@@ -1,4 +1,4 @@
-import { IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsIn, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RegisterUserDto {
@@ -35,4 +35,8 @@ export class RegisterUserDto {
   })
   @IsString()
   phoneNumber: string;
+
+  @IsOptional()
+  @IsIn(['code', 'link'])
+  activationMode: 'code' | 'link' | 'phone'; // mode choisi
 }

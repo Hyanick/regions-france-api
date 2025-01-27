@@ -301,7 +301,7 @@ export class UserController {
   async getProfilePictureById(@Param('userId') userId: number, @Res() res) {
     // Récupère le chemin de la photo depuis le service utilisateur
     const filePath = await this.userService.getProfilePicturePath(userId);
-    console.log('filePath---> controller', filePath);
+    //console.log('filePath---> controller', filePath);
 
     // Vérifie si le fichier existe
     if (!fs.existsSync(filePath)) {

@@ -7,13 +7,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
-import { User } from '../entities/user.entity';
-import { UserService } from './user.service';
+import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { RegisterUserDto } from 'src/dtos/register-user.dto';
-import { UpdateUserDto } from 'src/dtos/update-user.dto';
-import { PartialType } from '@nestjs/swagger';
-import { MailerService } from '@nestjs-modules/mailer';
+import { User } from '../entities/user.entity';
+import { EmailService } from './email.service';
+import { UserService } from './user.service';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +21,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly mailerService: MailerService,
+    private emailService: EmailService,
   ) {}
   /*
   async validateUser(email: string, password: string): Promise<User | null> {
@@ -56,7 +56,7 @@ export class AuthService {
 
     const userIsActive = (await this.userService.findByEmail(email)).isActive;
     if (!userIsActive) {
-      throw new UnauthorizedException('Veuillez activer compte');
+      throw new UnauthorizedException('Veuillez activer le compte');
     }
 
     const payload = { userId: user.userId, email: user.email };
@@ -140,8 +140,11 @@ export class AuthService {
 
     // Mise à jour du code dans la base de données
     await this.userService.updateUser(user.userId, { verificationCode });
-
+    // Envoi de l'email
     // Envoi du code par email
+
+    this.emailService.sendVerificationEmailByCode(user.email, verificationCode);
+    /*
     await this.mailerService.sendMail({
       to: user.email,
       subject: 'Vérification de votre compte',
@@ -149,9 +152,36 @@ export class AuthService {
       context: {
         code: verificationCode, // Remplissage des variables {{ code }} dans le template
       },
-    });
+    });*/
   }
+  /*
+  async sendVerificationEmail(email: string, userId: number): Promise<void> {
+    try {
+      // Générer un token de vérification
+      const verificationToken = this.jwtService.sign(
+        { userId, email },
+        { secret: process.env.JWT_VERIFICATION_SECRET, expiresIn: '1h' }, // Clé secrète pour vérification
+      );
 
+      // URL du lien de vérification (backend endpoint)
+      const verificationLink = `${process.env.FRONTEND_URL}/verify-account?token=${verificationToken}`;
+
+      // Envoi de l'email
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'Vérification de votre compte',
+        html: `
+          <p>Bonjour,</p>
+          <p>Cliquez sur le lien ci-dessous pour vérifier votre compte :</p>
+          <a href="${verificationLink}" target="_blank">Vérifier mon compte</a>
+          <p>Si vous n'avez pas demandé cette vérification, ignorez cet email.</p>
+        `,
+      });
+    } catch (error) {
+      throw new BadRequestException('Impossible d\'envoyer l\'email de vérification');
+    }
+  }
+*/
   /*
   async login(loginUser: LoginDto) {
     const payload = {  email: loginUser.email };
@@ -184,11 +214,11 @@ export class AuthService {
     const user = await this.userService.findById(userId);
 
     // Rechercher l'utilisateur
-
+/*
     console.log('userId ', userId);
     console.log('user ', user);
     console.log('user.verificationCode ', user.verificationCode);
-    console.log('code ', code);
+    console.log('code ', code);*/
 
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);

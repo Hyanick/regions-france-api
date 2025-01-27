@@ -4,19 +4,19 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
+import { RegisterUserDto } from 'src/dtos/register-user.dto';
 import { UpdateUserDto } from 'src/dtos/update-user.dto';
 import { User } from 'src/entities/user.entity';
 import { Repository } from 'typeorm';
-import { VerificationService } from './verification.service';
-import { RegisterUserDto } from 'src/dtos/register-user.dto';
-import * as bcrypt from 'bcrypt';
+import { EmailService } from './email.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private verificationService: VerificationService, // Service pour gérer le code de vérification
+    private emailService: EmailService, // Service pour gérer le code de vérification
   ) {}
 
   findAll(): Promise<User[]> {
@@ -33,8 +33,11 @@ export class UserService {
 
   // Méthode pour créer un utilisateur
 
-  async registerUser(registerUserDto: Partial<RegisterUserDto>): Promise<Partial<User>> {
-    const {firstName, lastName, email, password } = registerUserDto;
+  async registerUser(
+    registerUserDto: Partial<RegisterUserDto>,
+  ): Promise<Partial<User>> {
+    const { firstName, lastName, email, password, activationMode } =
+      registerUserDto;
 
     // Vérifier si un utilisateur avec cet email existe déjà
     const existingUser = await this.findByEmail(email);
@@ -46,8 +49,8 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     //Récupère le code
-    const verificationCode =
-    await this.verificationService.generateVerificationCode(); // Générer un code
+    const verificationCode = await this.emailService.generateVerificationCode(); // Générer un code
+    // Appeler sendVerificationEmail et récupérer le token
 
     const newUser = this.userRepository.create({
       firstName,
@@ -56,33 +59,55 @@ export class UserService {
       password: hashedPassword,
       isActive: false, // L'utilisateur est inactif tant que l'e-mail n'est pas vérifié
       verificationCode,
-      
     });
     // Sauvegarder l'utilisateur dans la base de données
+    let token = '';
     const savedUser = await this.userRepository.save(newUser);
-
-
-
-    // Envoyer un email ou SMS
-    if (registerUserDto.phoneNumber) {
-      await this.verificationService.sendSms(
-        registerUserDto.phoneNumber,
+    if (activationMode === 'link') {
+      token = await this.emailService.sendVerificationEmailByLink(
+        savedUser.email,
+        savedUser.userId,
+      );
+    } else if (activationMode === 'code') {
+      await this.emailService.sendVerificationEmailByCode(
+        registerUserDto.email,
         verificationCode,
       );
     } else {
-      await this.verificationService.sendEmail(
-        registerUserDto.email,
+      await this.emailService.sendSms(
+        registerUserDto.phoneNumber,
         verificationCode,
       );
     }
 
+    /*
+    await this.emailService.sendVerificationEmail(
+      savedUser.email,
+      savedUser.userId,
+    );
+    */
+    /*
+    // Envoyer un email ou SMS
+    if (registerUserDto.phoneNumber) {
+      await this.emailService.sendSms(
+        registerUserDto.phoneNumber,
+        verificationCode,
+      );
+    } else if (registerUserDto.email) {
+      await this.emailService.sendEmail(
+        registerUserDto.email,
+        verificationCode,
+      );
+    }
+*/
     // Retourner uniquement le firstname, le lastName, l'email et le mot de passe
     return {
       firstName: savedUser.firstName,
       lastName: savedUser.lastName,
       email: savedUser.email,
       password: savedUser.password,
-      userId: savedUser.userId
+      userId: savedUser.userId,
+      token: token,
     };
   }
 
