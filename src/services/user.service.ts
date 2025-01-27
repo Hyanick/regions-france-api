@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -42,7 +43,8 @@ export class UserService {
     // Vérifier si un utilisateur avec cet email existe déjà
     const existingUser = await this.findByEmail(email);
     if (existingUser) {
-      throw new ConflictException('Email already in use');
+     // throw new ConflictException('Email already in use');
+     throw new BadRequestException('Cet email est déjà utilisé.');
     }
 
     // Hacher le mot de passe
